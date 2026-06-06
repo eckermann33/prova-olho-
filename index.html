@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Visual – Quiz Anatômico | Neuroanatomia UNIFATEB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #070d1a;
+    --surface:   #0e1929;
+    --surface2:  #162236;
+    --border:    #1e3050;
+    --teal:      #00c8b4;
+    --teal-dim:  rgba(0,200,180,0.12);
+    --blue:      #3b82f6;
+    --text:      #e8edf5;
+    --muted:     #7a91b0;
+    --correct:   #22c55e;
+    --correct-bg:rgba(34,197,94,0.10);
+    --wrong:     #ef4444;
+    --wrong-bg:  rgba(239,68,68,0.10);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 12px 60px;
+  }
+
+  .header {
+    width: 100%; max-width: 760px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 22px 4px 14px;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-icon { font-size: 28px; line-height: 1; }
+  .header-title { font-size: 17px; font-weight: 700; color: var(--teal); letter-spacing: .3px; }
+  .header-sub { font-size: 11px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+  .score-badge {
+    background: var(--teal-dim);
+    border: 1px solid rgba(0,200,180,0.25);
+    color: var(--teal);
+    border-radius: 20px; padding: 6px 16px;
+    font-size: 14px; font-weight: 600; letter-spacing: .3px;
+    white-space: nowrap;
+  }
+
+  .progress-wrap {
+    width: 100%; max-width: 760px;
+    height: 4px; background: var(--surface2);
+    border-radius: 2px; margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--teal), var(--blue));
+    border-radius: 2px;
+    transition: width .5s ease;
+  }
+  .progress-label {
+    width: 100%; max-width: 760px;
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--muted);
+    margin-bottom: 16px; padding: 0 2px;
+  }
+
+  .card {
+    width: 100%; max-width: 760px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,.55);
+  }
+
+  .img-wrap {
+    width: 100%; height: 300px;
+    background: #040810;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .img-wrap img {
+    max-height: 290px; max-width: 96%;
+    object-fit: contain;
+    transition: opacity .5s ease;
+    filter: drop-shadow(0 4px 20px rgba(0,200,180,.15));
+  }
+  .img-placeholder {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px; color: var(--muted); font-size: 13px;
+    position: absolute; width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  .img-placeholder span:first-child { font-size: 48px; opacity: .3; }
+  .img-tag {
+    position: absolute; bottom: 10px; right: 12px;
+    font-size: 10px; color: #2d4460;
+    background: rgba(4,8,16,.8);
+    padding: 3px 9px; border-radius: 4px;
+    letter-spacing: .5px; text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .q-wrap { padding: 20px 24px 12px; border-bottom: 1px solid var(--border); }
+  .q-num {
+    font-size: 10px; letter-spacing: 2.5px; color: var(--teal);
+    text-transform: uppercase; margin-bottom: 8px;
+    font-weight: 600; font-family: monospace;
+  }
+  .q-text { font-size: 16px; line-height: 1.65; color: var(--text); font-weight: 400; }
+
+  .opts { display: flex; flex-direction: column; gap: 10px; padding: 18px 20px; }
+  .opt-btn {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 20px; border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    color: var(--text); font-size: 15px; font-weight: 500;
+    cursor: pointer; text-align: left;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    transition: all .2s ease;
+  }
+  .opt-btn:hover:not(:disabled) { border-color: var(--teal); background: var(--teal-dim); }
+  .opt-btn:disabled { cursor: default; }
+  .opt-btn.correct  { border-color: var(--correct)!important; background: var(--correct-bg)!important; color: var(--correct)!important; }
+  .opt-btn.wrong    { border-color: var(--wrong)!important;   background: var(--wrong-bg)!important;   color: var(--wrong)!important;   }
+  .opt-btn.dimmed   { border-color: #1a2840!important; color: #2d4460!important; background: var(--surface)!important; }
+  .opt-letter {
+    min-width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(255,255,255,.05);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; font-family: monospace;
+    flex-shrink: 0;
+  }
+  .opt-icon { margin-left: auto; font-size: 18px; }
+
+  .feedback {
+    margin: 0 20px 16px;
+    padding: 16px 18px;
+    border-radius: 12px; border: 1px solid;
+    display: none; gap: 14px;
+    animation: fadeIn .3s ease;
+  }
+  .feedback.show { display: flex; }
+  .feedback.correct { border-color: var(--correct); background: var(--correct-bg); }
+  .feedback.wrong   { border-color: var(--wrong);   background: var(--wrong-bg);   }
+  .fb-icon { font-size: 22px; flex-shrink: 0; padding-top: 1px; }
+  .fb-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .feedback.correct .fb-title { color: var(--correct); }
+  .feedback.wrong   .fb-title { color: var(--wrong);   }
+  .fb-body { font-size: 13.5px; color: #8ba8cc; line-height: 1.65; }
+  .fb-body strong { color: #c8d8f0; font-weight: 600; }
+
+  .nav-wrap { padding: 0 20px 22px; display: flex; justify-content: flex-end; }
+  .btn-next {
+    padding: 13px 28px;
+    background: linear-gradient(135deg, var(--teal), var(--blue));
+    color: #040c1a; border: none; border-radius: 12px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    letter-spacing: .3px; transition: opacity .2s;
+    display: none;
+  }
+  .btn-next:hover { opacity: .88; }
+  .btn-next.show { display: block; }
+
+  #result-screen { display: none; width: 100%; max-width: 760px; margin-top: 10px; }
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 40px 32px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,.55);
+  }
+  .result-medal { font-size: 64px; margin-bottom: 14px; }
+  .result-title { font-size: 24px; font-weight: 700; color: var(--teal); margin-bottom: 4px; }
+  .result-sub {
+    font-size: 12px; color: var(--muted);
+    letter-spacing: 2px; text-transform: uppercase;
+    font-family: monospace; margin-bottom: 28px;
+  }
+  .score-big { display: inline-flex; align-items: baseline; gap: 4px; margin-bottom: 16px; }
+  .score-num { font-size: 80px; font-weight: 700; color: var(--teal); line-height: 1; }
+  .score-den { font-size: 36px; color: #2d4460; font-weight: 500; }
+  .result-bar { height: 8px; background: #0a1525; border-radius: 4px; overflow: hidden; margin: 0 0 8px; }
+  .result-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .result-pct { font-size: 20px; color: var(--muted); margin-bottom: 10px; }
+  .result-msg { font-size: 15px; color: #7dd3fc; margin-bottom: 32px; line-height: 1.6; }
+
+  .review-title {
+    font-size: 11px; letter-spacing: 2px; color: #2d4460;
+    text-transform: uppercase; font-family: monospace;
+    margin-bottom: 14px; text-align: left;
+  }
+  .review-list { text-align: left; margin-bottom: 28px; display: flex; flex-direction: column; gap: 8px; }
+  .review-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,.02);
+    border-radius: 10px;
+    border-left: 3px solid;
+  }
+  .review-item.ok   { border-color: var(--correct); }
+  .review-item.fail { border-color: var(--wrong); }
+  .review-icon { font-size: 15px; margin-top: 1px; flex-shrink: 0; }
+  .review-q { font-size: 13px; color: #8ba8cc; line-height: 1.5; }
+  .review-ans { font-size: 13px; font-weight: 600; margin-top: 3px; }
+  .review-item.ok   .review-ans { color: var(--correct); }
+  .review-item.fail .review-ans { color: var(--wrong); }
+  .review-correct { font-size: 12px; color: #4d6a8f; margin-top: 2px; }
+
+  .btn-restart {
+    width: 100%; padding: 15px;
+    background: linear-gradient(135deg, var(--teal), var(--blue));
+    color: #040c1a; border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    letter-spacing: .3px; transition: opacity .2s;
+  }
+  .btn-restart:hover { opacity: .88; }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">👁️</div>
+    <div>
+      <div class="header-title">Sistema Visual</div>
+      <div class="header-sub">Neuroanatomofisiologia · UNIFATEB · 2º Bimestre</div>
+    </div>
+  </div>
+  <div class="score-badge" id="score-display">⭐ 0 / 0</div>
+</div>
+
+<div class="progress-wrap"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+<div class="progress-label">
+  <span id="prog-label">Questão 1 de 18</span>
+  <span id="prog-pct">0%</span>
+</div>
+
+<div id="quiz-screen">
+  <div class="card">
+    <div class="img-wrap" id="img-wrap">
+      <div class="img-placeholder" id="img-placeholder"><span>🔬</span><span>Carregando imagem...</span></div>
+      <img id="main-img" src="" alt="Estrutura anatômica" style="opacity:0"
+           onload="this.style.opacity=1; document.getElementById('img-placeholder').style.display='none';"
+           onerror="handleImgError(this)">
+      <div class="img-tag" id="img-tag"></div>
+    </div>
+    <div class="q-wrap">
+      <div class="q-num" id="q-num"></div>
+      <div class="q-text" id="q-text"></div>
+    </div>
+    <div class="opts" id="opts"></div>
+    <div class="feedback" id="feedback">
+      <div class="fb-icon" id="fb-icon"></div>
+      <div>
+        <div class="fb-title" id="fb-title"></div>
+        <div class="fb-body" id="fb-body"></div>
+      </div>
+    </div>
+    <div class="nav-wrap">
+      <button class="btn-next" id="btn-next" onclick="nextQuestion()">Próxima →</button>
+    </div>
+  </div>
+</div>
+
+<div id="result-screen">
+  <div class="result-card">
+    <div class="result-medal" id="medal"></div>
+    <div class="result-title">Sistema Visual</div>
+    <div class="result-sub">Resultado Final · UNIFATEB</div>
+    <div class="score-big">
+      <span class="score-num" id="final-score">0</span>
+      <span class="score-den" id="final-total">/18</span>
+    </div>
+    <div class="result-bar"><div class="result-fill" id="result-fill" style="width:0%"></div></div>
+    <div class="result-pct" id="result-pct"></div>
+    <div class="result-msg" id="result-msg"></div>
+    <div class="review-title">Revisão das questões</div>
+    <div class="review-list" id="review-list"></div>
+    <button class="btn-restart" onclick="restart()">🔄 Recomeçar do zero</button>
+  </div>
+</div>
+
+<script>
+const IMG = {
+  EYE_DIAGRAM: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Schematic_diagram_of_the_human_eye_en.svg/600px-Schematic_diagram_of_the_human_eye_en.svg.png",
+  FUNDUS:      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Fundus_photograph_of_normal_right_eye.jpg/640px-Fundus_photograph_of_normal_right_eye.jpg",
+  CHIASM:      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Chiasma_opticum.jpg/600px-Chiasma_opticum.jpg",
+  RETINA:      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Retina_diagram.svg/500px-Retina_diagram.svg.png",
+  CILIARY:     "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Ciliaryprocess.jpg/600px-Ciliaryprocess.jpg",
+  IRIS:        "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Humaniris.jpg/480px-Humaniris.jpg",
+  BRAIN_BASE:  "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Human_brain_superior_view.jpg/600px-Human_brain_superior_view.jpg",
+  OPTIC_NERVE: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Nervus_opticus.jpg/600px-Nervus_opticus.jpg",
+};
+
+const QUESTIONS = [
+  {
+    img: IMG.EYE_DIAGRAM,
+    imgTag: "Corte esquemático do olho – Gray's Anatomy",
+    pergunta: "Neste corte do globo ocular, qual é a estrutura transparente que forma o polo anterior do olho, cobrindo a íris e a pupila, e é responsável por ~65–75% do poder refrativo?",
+    correto: "Córnea",
+    opcoes: ["Córnea", "Esclera"],
+    fbCerto: "✅ Correto! A <strong>córnea</strong> é a túnica fibrosa transparente e avascular do polo anterior. É a principal estrutura dióptrica do olho (~43D). Composta por 5 camadas: epitélio, membrana de Bowman, estroma (80%), membrana de Descemet e endotélio.",
+    fbErrado: "❌ Você marcou: <strong>Esclera</strong> — mas a resposta é <strong>Córnea</strong>.<br><br>A <strong>ESCLERA</strong> é a túnica fibrosa <em>opaca</em> e branca que forma ~5/6 da parede ocular — você a reconhece como o \"branco do olho\". A <strong>CÓRNEA</strong> é a porção transparente anterior que permite a passagem da luz; é avascular (nutrida por humor aquoso e lágrimas) e muito inervada (extremamente sensível à dor)."
+  },
+  {
+    img: IMG.EYE_DIAGRAM,
+    imgTag: "Corte esquemático do olho",
+    pergunta: "Neste esquema, qual fluido preenche a câmara anterior (entre a córnea e a íris/cristalino), mantendo a pressão intraocular e nutrindo a córnea?",
+    correto: "Humor aquoso",
+    opcoes: ["Humor aquoso", "Humor vítreo"],
+    fbCerto: "✅ Correto! O <strong>humor aquoso</strong> é produzido pelo corpo ciliar, circula pelas câmaras anterior e posterior do segmento anterior, e é drenado pelo canal de Schlemm. Obstrução dessa drenagem → glaucoma (↑ pressão intraocular).",
+    fbErrado: "❌ Você marcou: <strong>Humor vítreo</strong> — mas a resposta é <strong>Humor aquoso</strong>.<br><br>O <strong>HUMOR VÍTREO</strong> é a substância <em>gelatinosa</em> que preenche a câmara <em>posterior</em> (entre cristalino e retina), correspondendo a ~80% do volume ocular — não é renovado. O <strong>HUMOR AQUOSO</strong> é o fluido aquoso renovável que ocupa o segmento anterior e é produzido continuamente pelo corpo ciliar."
+  },
+  {
+    img: IMG.EYE_DIAGRAM,
+    imgTag: "Corte esquemático do olho",
+    pergunta: "Qual estrutura biconvexa e transparente, situada entre o humor aquoso e o humor vítreo, muda de forma durante a acomodação visual?",
+    correto: "Cristalino",
+    opcoes: ["Cristalino", "Corpo ciliar"],
+    fbCerto: "✅ Correto! O <strong>cristalino</strong> (lente) é a estrutura biconvexa avascular e elástica que, em conjunto com a córnea, foca a imagem na retina. A acomodação (foco para perto) ocorre quando os músculos ciliares contraem → as zônulas relaxam → o cristalino fica mais convexo. Opacificação do cristalino = <strong>catarata</strong>.",
+    fbErrado: "❌ Você marcou: <strong>Corpo ciliar</strong> — mas a resposta é <strong>Cristalino</strong>.<br><br>O <strong>CORPO CILIAR</strong> é a estrutura do segmento anterior que contém os músculos ciliares (acomodação) e produz o humor aquoso. O <strong>CRISTALINO</strong> é a lente biconvexa transparente localizada entre o humor aquoso e o humor vítreo, mantida pelas fibras zonulares (zônula de Zinn) do corpo ciliar."
+  },
+  {
+    img: IMG.EYE_DIAGRAM,
+    imgTag: "Corte esquemático do olho",
+    pergunta: "Qual substância de aspecto gelatinoso ocupa a câmara posterior do olho (entre cristalino e retina), representando ~80% do volume ocular e não sendo renovada ao longo da vida?",
+    correto: "Humor vítreo",
+    opcoes: ["Humor vítreo", "Humor aquoso"],
+    fbCerto: "✅ Correto! O <strong>humor vítreo</strong> é composto por ~99% de água, colágeno tipo II e ácido hialurônico. Mantém o globo ocular esférico e pressiona a retina contra a coroide. Opacidades no vítreo = \"moscas volantes\" (miodesnias).",
+    fbErrado: "❌ Você marcou: <strong>Humor aquoso</strong> — mas a resposta é <strong>Humor vítreo</strong>.<br><br>O <strong>HUMOR AQUOSO</strong> é fluido aquoso que preenche o <em>segmento anterior</em> (câmaras anterior e posterior do segmento frontal) e é renovado continuamente. O <strong>HUMOR VÍTREO</strong> é o gel que preenche a vasta câmara posterior (entre cristalino e retina) — não é renovado durante a vida."
+  },
+  {
+    img: IMG.IRIS,
+    imgTag: "Fotografia – olho humano (vista anterior)",
+    pergunta: "Na fotografia do olho, qual é o diafragma muscular pigmentado que regula o diâmetro da abertura central, controlando a quantidade de luz que entra no olho?",
+    correto: "Íris",
+    opcoes: ["Íris", "Esclera"],
+    fbCerto: "✅ Correto! A <strong>íris</strong> é o diafragma muscular da úvea anterior, com dois grupos musculares: esfíncter da pupila (parassimpático – NC III → miose) e dilatador da pupila (simpático – midríase). A cor é determinada pela quantidade de melanina no estroma.",
+    fbErrado: "❌ Você marcou: <strong>Esclera</strong> — mas a resposta é <strong>Íris</strong>.<br><br>A <strong>ESCLERA</strong> é o \"branco do olho\" — camada fibrosa opaca. A <strong>ÍRIS</strong> é o anel colorido visível ao redor da pupila; contém músculo liso e controla a pupila via sistema nervoso autônomo: parassimpático (NC III) → miose; simpático → midríase."
+  },
+  {
+    img: IMG.IRIS,
+    imgTag: "Fotografia – olho humano (vista anterior)",
+    pergunta: "Na fotografia, qual é a abertura circular escura no centro da íris por onde a luz penetra para atingir o cristalino e a retina?",
+    correto: "Pupila",
+    opcoes: ["Pupila", "Fóvea"],
+    fbCerto: "✅ Correto! A <strong>pupila</strong> é o orifício central da íris. Dilata-se no escuro (midríase simpática) e contrai na luz intensa (miose parassimpática). O reflexo pupilar à luz testa a integridade do nervo óptico (II), do mesencéfalo e do NC III. Anisocoria = assimetria das pupilas.",
+    fbErrado: "❌ Você marcou: <strong>Fóvea</strong> — mas a resposta é <strong>Pupila</strong>.<br><br>A <strong>FÓVEA</strong> é a pequena depressão central da mácula <em>na retina</em> — não é visível a olho nu (fica no polo posterior interno). A <strong>PUPILA</strong> é o orifício visível no centro da íris por onde a luz entra; seu tamanho é regulado pelo SNA."
+  },
+  {
+    img: IMG.FUNDUS,
+    imgTag: "Fundoscopia – fundo de olho real",
+    pergunta: "Esta é uma fundoscopia real. A camada avermelhada que você vê recobrindo toda a câmara posterior do olho, que contém fotorreceptores (cones e bastonetes), é qual estrutura?",
+    correto: "Retina",
+    opcoes: ["Retina", "Coroide"],
+    fbCerto: "✅ Correto! A <strong>retina</strong> é a camada nervosa mais interna do olho, diretamente visualizável na fundoscopia. Possui 10 camadas histológicas. Seus fotorreceptores (≈6–7 milhões de cones + ≈125 milhões de bastonetes) captam a luz. Os axônios das células ganglionares formam o nervo óptico.",
+    fbErrado: "❌ Você marcou: <strong>Coroide</strong> — mas a resposta é <strong>Retina</strong>.<br><br>A <strong>COROIDE</strong> é a camada vascular da úvea posterior (entre esclera e retina) responsável pela nutrição da retina — ela não é diretamente visível na fundoscopia, mas contribui para o reflexo avermelhado do fundo. A <strong>RETINA</strong> é a camada nervosa interna que é visualizada diretamente na fundoscopia."
+  },
+  {
+    img: IMG.FUNDUS,
+    imgTag: "Fundoscopia – fundo de olho real",
+    pergunta: "Na fundoscopia, qual é a estrutura brilhante (área clara) da qual emergem os vasos retinianos e onde os axônios das células ganglionares convergem para formar o nervo óptico? (Corresponde ao ponto cego.)",
+    correto: "Papila óptica (nervo óptico)",
+    opcoes: ["Papila óptica (nervo óptico)", "Mácula"],
+    fbCerto: "✅ Correto! A <strong>papila óptica</strong> (disco óptico) é o ponto onde o nervo óptico emerge do globo. Não possui fotorreceptores → é o <strong>ponto cego</strong>. Em doenças com ↑ pressão intracraniana ocorre papiledema (edema da papila visível na fundoscopia).",
+    fbErrado: "❌ Você marcou: <strong>Mácula</strong> — mas a resposta é <strong>Papila óptica</strong>.<br><br>A <strong>MÁCULA</strong> é a região oval ligeiramente mais escura, localizada a ~4mm temporal do disco óptico, responsável pela visão central de alta resolução. A <strong>PAPILA ÓPTICA</strong> é o disco brilhante, nasal, com vasos emergindo — é o ponto cego (ausência de fotorreceptores)."
+  },
+  {
+    img: IMG.FUNDUS,
+    imgTag: "Fundoscopia – fundo de olho real",
+    pergunta: "Na fundoscopia, qual é a região oval, levemente amarelada, situada no polo posterior da retina (temporal ao disco óptico), responsável pela visão central e que contém a fóvea em seu centro?",
+    correto: "Mácula",
+    opcoes: ["Mácula", "Papila óptica"],
+    fbCerto: "✅ Correto! A <strong>mácula lútea</strong> (~5mm) é rica em cones e tem luteína (pigmento amarelo protetor). A degeneração macular relacionada à idade (<strong>DMRI</strong>) causa perda da visão central. No centro da mácula está a fóvea, que fornece máxima acuidade visual.",
+    fbErrado: "❌ Você marcou: <strong>Papila óptica</strong> — mas a resposta é <strong>Mácula</strong>.<br><br>A <strong>PAPILA ÓPTICA</strong> é o disco brilhante e nasal onde emergem os vasos — o ponto cego. A <strong>MÁCULA</strong> é a área oval ligeiramente acinzentada/amarelada, localizada temporalmente ao disco óptico, com alta densidade de cones. Seu centro é a fóvea centralis."
+  },
+  {
+    img: IMG.FUNDUS,
+    imgTag: "Fundoscopia – fundo de olho real",
+    pergunta: "Qual é a pequena depressão no centro da mácula (~1,5mm), com máxima concentração de cones, ausência de bastonetes e vasos, e que proporciona a maior acuidade visual?",
+    correto: "Fóvea",
+    opcoes: ["Fóvea", "Disco óptico (ponto cego)"],
+    fbCerto: "✅ Correto! A <strong>fóvea centralis</strong> é a região de melhor resolução visual. Contém apenas cones (sem bastonetes), sem vasos e sem células ganglionares sobrepostas — a luz atinge diretamente os fotorreceptores. Fóvea íntegra = visão nítida para leitura e reconhecimento de rostos.",
+    fbErrado: "❌ Você marcou: <strong>Disco óptico (ponto cego)</strong> — mas a resposta é <strong>Fóvea</strong>.<br><br>O <strong>DISCO ÓPTICO</strong> (ponto cego) não tem fotorreceptores — é onde o nervo óptico sai do olho. A <strong>FÓVEA</strong> é a depressão central da mácula, oposto do ponto cego: é onde a visão é MÁXIMA, com altíssima densidade de cones."
+  },
+  {
+    img: IMG.CILIARY,
+    imgTag: "Processo ciliar – preparação histológica real",
+    pergunta: "Nesta imagem do processo ciliar, qual músculo liso integrante do corpo ciliar, quando contraído, relaxa as fibras zonulares e torna o cristalino mais convexo (acomodação para perto)?",
+    correto: "Músculo ciliar",
+    opcoes: ["Músculo ciliar", "Músculo dilatador da pupila"],
+    fbCerto: "✅ Correto! O <strong>músculo ciliar</strong> é inervado pelo <strong>parassimpático</strong> (NC III). Contração → zônulas frouxas → cristalino mais esférico/convexo → foco para perto (acomodação). Relaxamento (simpático) → zônulas tensas → cristalino mais achatado → foco para longe. Inibição com atropina → cicloplegia (paralisia da acomodação).",
+    fbErrado: "❌ Você marcou: <strong>Músculo dilatador da pupila</strong> — mas a resposta é <strong>Músculo ciliar</strong>.<br><br>O <strong>MÚSCULO DILATADOR DA PUPILA</strong> é um músculo liso da <em>íris</em>, controlado pelo simpático (dilata a pupila). O <strong>MÚSCULO CILIAR</strong> está no <em>corpo ciliar</em>, inervado pelo parassimpático (NC III), e controla a forma do cristalino para acomodação."
+  },
+  {
+    img: IMG.CHIASM,
+    imgTag: "Cadáver – vista inferior do encéfalo (real)",
+    pergunta: "Nesta peça cadavérica, qual é a estrutura em X visível na base do encéfalo, formada pelo encontro dos dois nervos ópticos, onde ocorre o cruzamento parcial das fibras visuais?",
+    correto: "Quiasma óptico",
+    opcoes: ["Quiasma óptico", "Trato óptico"],
+    fbCerto: "✅ Correto! O <strong>quiasma óptico</strong> situa-se na base do encéfalo, acima da hipófise. As fibras <strong>nasais</strong> da retina cruzam para o lado oposto; as fibras <strong>temporais</strong> seguem ipsilaterais. Lesão no quiasma (ex: adenoma hipofisário) → <strong>hemianopsia bitemporal</strong>.",
+    fbErrado: "❌ Você marcou: <strong>Trato óptico</strong> — mas a resposta é <strong>Quiasma óptico</strong>.<br><br>O <strong>TRATO ÓPTICO</strong> é a via <em>pós-quiasma</em> que conduz os impulsos visuais ao corpo geniculado lateral e ao colículo superior. O <strong>QUIASMA ÓPTICO</strong> é a estrutura em X onde acontece o cruzamento parcial: fibras nasais cruzam (campo temporal visível) e fibras temporais não cruzam (campo nasal visível)."
+  },
+  {
+    img: IMG.CHIASM,
+    imgTag: "Cadáver – vista inferior do encéfalo (real)",
+    pergunta: "No quiasma óptico visível nesta peça, quais fibras do nervo óptico cruzam para o lado contralateral (decussam)?",
+    correto: "Fibras nasais da retina",
+    opcoes: ["Fibras nasais da retina", "Fibras temporais da retina"],
+    fbCerto: "✅ Correto! As <strong>fibras nasais</strong> (que percebem o campo visual temporal) cruzam no quiasma para o trato óptico contralateral. As fibras temporais (campo nasal) seguem ipsilaterais. Resultado: cada hemisfério processa o hemicampo visual <em>oposto</em>. Lesão pré-quiasma → cegueira monocular; quiasma → hemianopsia bitemporal; pós-quiasma → hemianopsia homônima.",
+    fbErrado: "❌ Você marcou: <strong>Fibras temporais da retina</strong> — mas a resposta é <strong>Fibras nasais da retina</strong>.<br><br>As <strong>FIBRAS TEMPORAIS</strong> <em>não cruzam</em> — seguem ipsilateralmente no trato óptico do mesmo lado. São as <strong>FIBRAS NASAIS</strong> que cruzam no quiasma para o lado oposto. Macete: <em>NASAL = cruza, TEMPORAL = não cruza</em>."
+  },
+  {
+    img: IMG.CHIASM,
+    imgTag: "Cadáver – base do encéfalo",
+    pergunta: "Na peça anatômica, qual estrutura parte do quiasma óptico em direção ao corpo geniculado lateral do tálamo, transportando as informações visuais de cada hemicampo visual para o hemisfério correspondente?",
+    correto: "Trato óptico",
+    opcoes: ["Trato óptico", "Nervo óptico"],
+    fbCerto: "✅ Correto! O <strong>trato óptico</strong> é a via pós-quiasma que contém fibras de ambos os olhos (campo visual contralateral). Dirige-se ao <strong>corpo geniculado lateral</strong> (tálamo) → radiações ópticas → córtex visual primário (área 17, lobo occipital). Lesão do trato → hemianopsia homônima contralateral.",
+    fbErrado: "❌ Você marcou: <strong>Nervo óptico</strong> — mas a resposta é <strong>Trato óptico</strong>.<br><br>O <strong>NERVO ÓPTICO</strong> (par II) é a estrutura <em>pré-quiasma</em> que conduz informações de apenas <em>um</em> olho; lesão → cegueira monocular. O <strong>TRATO ÓPTICO</strong> é a via <em>pós-quiasma</em> que contém fibras de <em>ambos</em> os olhos para o campo visual contralateral."
+  },
+  {
+    img: IMG.RETINA,
+    imgTag: "Esquema histológico da retina",
+    pergunta: "Neste esquema histológico, a retina possui 10 camadas. Qual camada, localizada mais externamente (adjacente ao epitélio pigmentar), contém os fotorreceptores responsáveis pela fototransdução?",
+    correto: "Camada de fotorreceptores (cones e bastonetes)",
+    opcoes: ["Camada de fotorreceptores (cones e bastonetes)", "Camada de células ganglionares"],
+    fbCerto: "✅ Correto! A <strong>camada de fotorreceptores</strong> (4ª camada) contém: <strong>cones</strong> (~6–7 milhões, concentrados na fóvea, visão fotópica e cor) e <strong>bastonetes</strong> (~125 milhões, periféricos, visão escotópica em preto e branco). Importante: a retina é \"invertida\" — a luz deve atravessar as outras camadas antes de chegar aos fotorreceptores.",
+    fbErrado: "❌ Você marcou: <strong>Camada de células ganglionares</strong> — mas a resposta é <strong>Camada de fotorreceptores</strong>.<br><br>A <strong>CAMADA DE CÉLULAS GANGLIONARES</strong> está na face <em>interna</em> da retina (adjacente ao humor vítreo) — seus axônios formam o nervo óptico. A <strong>CAMADA DE FOTORRECEPTORES</strong> está na face <em>externa</em> (adjacente ao epitélio pigmentar) e é onde a luz é convertida em sinal elétrico."
+  },
+  {
+    img: IMG.RETINA,
+    imgTag: "Esquema histológico da retina",
+    pergunta: "Nas 10 camadas da retina, qual é a camada mais interna (face vitreal), cujos axônios se reúnem na papila óptica para formar o nervo óptico (II par craniano)?",
+    correto: "Camada de células ganglionares",
+    opcoes: ["Camada de células ganglionares", "Camada de fotorreceptores (cones e bastonetes)"],
+    fbCerto: "✅ Correto! A <strong>camada de células ganglionares</strong> é a 8ª camada. Seus axônios percorrem a superfície interna da retina (camada de fibras nervosas, 9ª), convergem na papila óptica e formam o <strong>nervo óptico</strong>. Glaucoma destrói progressivamente essas células → perda de campo visual.",
+    fbErrado: "❌ Você marcou: <strong>Camada de fotorreceptores</strong> — mas a resposta é <strong>Camada de células ganglionares</strong>.<br><br>A <strong>CAMADA DE FOTORRECEPTORES</strong> (cones e bastonetes) fica na face <em>externa</em> da retina. A <strong>CAMADA DE CÉLULAS GANGLIONARES</strong> fica na face <em>interna</em> (adjacente ao vítreo) e é responsável por transmitir o sinal já processado ao cérebro via nervo óptico."
+  },
+  {
+    img: IMG.EYE_DIAGRAM,
+    imgTag: "Corte esquemático – via óptica",
+    pergunta: "Qual é o nervo craniano formado pelos axônios das células ganglionares da retina, que deixa a órbita pelo canal óptico e se une ao contralateral para formar o quiasma óptico?",
+    correto: "Nervo óptico (par craniano II)",
+    opcoes: ["Nervo óptico (par craniano II)", "Nervo oculomotor (par craniano III)"],
+    fbCerto: "✅ Correto! O <strong>nervo óptico</strong> (NC II) contém 770.000 a 1,7 milhão de fibras nervosas. Tecnicamente é um trato do SNC (coberto por mielina de oligodendrócitos, não de células de Schwann). Por isso, a esclerose múltipla pode causar <strong>neurite óptica</strong>. Lesão → amaurose (cegueira monocular).",
+    fbErrado: "❌ Você marcou: <strong>Nervo oculomotor (par craniano III)</strong> — mas a resposta é <strong>Nervo óptico (par craniano II)</strong>.<br><br>O <strong>NC III (oculomotor)</strong> controla os músculos extraoculares (exceto oblíquo superior e reto lateral) e a pupila (parassimpático). O <strong>NC II (óptico)</strong> é exclusivamente sensorial — conduz a informação visual da retina ao quiasma óptico e daí ao córtex occipital."
+  },
+  {
+    img: IMG.EYE_DIAGRAM,
+    imgTag: "Corte esquemático do olho",
+    pergunta: "Qual é a túnica fibrosa opaca e branca que forma ~5/6 da parede do globo ocular, mantém sua forma e serve como ponto de inserção para os músculos extraoculares?",
+    correto: "Esclera",
+    opcoes: ["Esclera", "Córnea"],
+    fbCerto: "✅ Correto! A <strong>esclera</strong> é a camada fibrosa externa posterior, composta principalmente por colágeno. Pontos importantes: nela se inserem os 6 músculos extraoculares; o nervo óptico a perfura pela <em>lâmina cribrosa</em>; junta-se à córnea no limbo esclerocorneano.",
+    fbErrado: "❌ Você marcou: <strong>Córnea</strong> — mas a resposta é <strong>Esclera</strong>.<br><br>A <strong>CÓRNEA</strong> é transparente, avascular e forma ~1/6 anterior da parede ocular. A <strong>ESCLERA</strong> é opaca e branca (\"branco do olho\"), formando os ~5/6 posteriores. A esclera fornece proteção mecânica ao conteúdo do olho e é o local de inserção dos músculos extraoculares."
+  }
+];
+
+let questions = [];
+let current   = 0;
+let score     = 0;
+let answered  = false;
+let history   = [];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function init() {
+  questions = shuffle(QUESTIONS).map(q => ({ ...q, opcoes: shuffle(q.opcoes) }));
+  current = 0; score = 0; answered = false; history = [];
+  document.getElementById('quiz-screen').style.display  = '';
+  document.getElementById('result-screen').style.display = 'none';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[current];
+  const total = questions.length;
+
+  const pct = Math.round((current / total) * 100);
+  document.getElementById('prog-fill').style.width  = pct + '%';
+  document.getElementById('prog-label').textContent = `Questão ${current + 1} de ${total}`;
+  document.getElementById('prog-pct').textContent   = pct + '%';
+  document.getElementById('score-display').textContent = `⭐ ${score} / ${current}`;
+
+  const img = document.getElementById('main-img');
+  const placeholder = document.getElementById('img-placeholder');
+  img.style.opacity = '0';
+  placeholder.style.display = 'flex';
+  img.src = q.img;
+  document.getElementById('img-tag').textContent = q.imgTag;
+
+  document.getElementById('q-num').textContent = `QUESTÃO ${current + 1} — IDENTIFIQUE A ESTRUTURA`;
+  document.getElementById('q-text').textContent = q.pergunta;
+
+  const optsEl = document.getElementById('opts');
+  optsEl.innerHTML = '';
+  q.opcoes.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span class="opt-letter">${['A','B'][i]}</span>${opt}`;
+    btn.onclick = () => selectAnswer(opt, btn, q);
+    optsEl.appendChild(btn);
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  document.getElementById('btn-next').className = 'btn-next';
+  answered = false;
+}
+
+function handleImgError(img) {
+  img.style.display = 'none';
+  const ph = document.getElementById('img-placeholder');
+  ph.style.display = 'flex';
+  ph.innerHTML = '<span style="font-size:48px;opacity:.3">🔬</span><span style="font-size:12px;color:#4d6a8f;text-align:center;padding:0 20px">Imagem anatômica<br>(verifique sua conexão)</span>';
+}
+
+function selectAnswer(opt, btn, q) {
+  if (answered) return;
+  answered = true;
+
+  const isCorrect = (opt === q.correto);
+  if (isCorrect) score++;
+
+  const allBtns = document.querySelectorAll('.opt-btn');
+  allBtns.forEach(b => {
+    const label = b.textContent.slice(1).trim();
+    if (label === q.correto) {
+      b.className = 'opt-btn correct';
+      b.innerHTML += '<span class="opt-icon">✓</span>';
+    } else if (label === opt && !isCorrect) {
+      b.className = 'opt-btn wrong';
+      b.innerHTML += '<span class="opt-icon">✗</span>';
+    } else {
+      b.className = 'opt-btn dimmed';
+    }
+    b.disabled = true;
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
+  document.getElementById('fb-icon').textContent = isCorrect ? '✅' : '❌';
+  document.getElementById('fb-title').textContent = isCorrect
+    ? `Correto! ${q.correto}`
+    : `Incorreto — a resposta é: ${q.correto}`;
+  document.getElementById('fb-body').innerHTML = isCorrect ? q.fbCerto : q.fbErrado;
+
+  document.getElementById('btn-next').className = 'btn-next show';
+  document.getElementById('score-display').textContent = `⭐ ${score} / ${current + 1}`;
+
+  history.push({ q: q.pergunta, selected: opt, correct: q.correto, ok: isCorrect });
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= questions.length) {
+    showResult();
+  } else {
+    renderQuestion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function showResult() {
+  document.getElementById('quiz-screen').style.display  = 'none';
+  document.getElementById('result-screen').style.display = '';
+
+  const total = questions.length;
+  const pct = Math.round((score / total) * 100);
+
+  document.getElementById('medal').textContent = pct === 100 ? '🏆' : pct >= 75 ? '🥇' : pct >= 50 ? '🥈' : '📖';
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('final-total').textContent  = '/' + total;
+  document.getElementById('result-pct').textContent   = pct + '% de acerto';
+
+  const fill = document.getElementById('result-fill');
+  fill.style.background = pct >= 75 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
+  setTimeout(() => fill.style.width = pct + '%', 100);
+
+  document.getElementById('result-msg').textContent =
+    pct === 100 ? 'Perfeito! Você domina o Sistema Visual. Boa prova! 🎉' :
+    pct >= 75  ? 'Ótimo desempenho! Revise os erros e você estará pronto.' :
+    pct >= 50  ? 'Bom início! Estude os feedbacks dos erros e tente novamente.' :
+                 'Continue praticando — leia os feedbacks com atenção!';
+
+  const list = document.getElementById('review-list');
+  list.innerHTML = '';
+  history.forEach(h => {
+    const div = document.createElement('div');
+    div.className = 'review-item ' + (h.ok ? 'ok' : 'fail');
+    div.innerHTML = `
+      <div class="review-icon">${h.ok ? '✓' : '✗'}</div>
+      <div>
+        <div class="review-q">${h.q.length > 90 ? h.q.slice(0,90)+'...' : h.q}</div>
+        <div class="review-ans">${h.ok ? h.correct : 'Você: ' + h.selected}</div>
+        ${!h.ok ? `<div class="review-correct">✓ Correto: ${h.correct}</div>` : ''}
+      </div>`;
+    list.appendChild(div);
+  });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function restart() {
+  init();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+init();
+</script>
+</body>
+</html>
